@@ -6,7 +6,7 @@
 <p align="center">A Minecraft Fabric Utility Mod for anarchy servers — completely free and open source.</p>
 
 <div align="center">
-    <a href="https://discord.gg/nVUBzkZEM5"><img src="https://img.shields.io/discord/000000000000000000?logo=discord" alt="Discord"/></a>
+    <a href="https://discord.gg/fsyFenWkm"><img src="https://img.shields.io/discord/000000000000000000?logo=discord" alt="Discord"/></a>
     <br>
     <img src="https://img.shields.io/github/last-commit/Palmtreedev-real/AN0N" alt="GitHub last commit"/>
     <img src="https://img.shields.io/github/commit-activity/w/Palmtreedev-real/AN0N" alt="GitHub commit activity"/>
@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/github/license/Palmtreedev-real/AN0N" alt="GitHub license"/>
 </div>
 
-> **⚠️ AN0N Client is in active development.** You may encounter bugs and breaking changes. Please report any issues on [Discord](https://discord.gg/nVUBzkZEM5) or [GitHub Issues](https://github.com/PalmtreeDev-real/an0n-client/issues).
+> **⚠️ AN0N Client is in active development.** You may encounter bugs and breaking changes. Please report any issues on [Discord](https://discord.gg/fsyFenWkm) or [GitHub Issues](https://github.com/PalmtreeDev-real/an0n-client/issues).
 
 ## Why AN0N?
 
