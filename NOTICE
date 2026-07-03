@@ -1,0 +1,50 @@
+AN0N Client
+Copyright (c) 2026 AtlasDevMC
+
+Based on Meteor Client
+Copyright (c) 2021 Meteor Development
+Licensed under GNU General Public License v3.0
+
+This project contains code from the following sources:
+
+- Meteor Client (https://github.com/MeteorDevelopment/meteor-client) - GPL-3.0
+  Used as the base for this client with extensive modifications.
+- Minecraft (c) Mojang AB - All Rights Reserved
+  This mod is not affiliated with or endorsed by Mojang AB.
+- Fabric (https://fabricmc.net) - Apache 2.0
+  Mod loading framework used to run this client.
+- Maven (https://maven.apache.org) - Apache 2.0
+  Build system used for project compilation.
+- Baritone (https://github.com/cabaletta/baritone) - LGPL-3.0
+  Pathfinding library.
+- Orbit (https://github.com/MeteorDevelopment/orbit) - MIT
+  Event bus library.
+- Starscript (https://github.com/MeteorDevelopment/starscript) - MIT
+  Scripting engine.
+- java-discord-rpc (https://github.com/MeteorDevelopment/java-discord-rpc) - MIT
+  Discord Rich Presence integration.
+- Reflections (https://github.com/ronmamo/reflections) - BSD 2-Clause
+  Java reflection utility.
+- WaybackAuthLib (https://github.com/florianreuth/WaybackAuthLib) - Apache 2.0
+  Authentication library.
+- Netty (https://netty.io) - Apache 2.0
+  Network framework.
+- Sodium (https://github.com/CaffeineMC/sodium-fabric) - LGPL-3.0
+  Rendering optimizations (compile-only dependency).
+- Lithium (https://github.com/CaffeineMC/lithium-fabric) - LGPL-3.0
+  Game logic optimizations (compile-only dependency).
+- Iris (https://github.com/IrisShaders/Iris) - LGPL-3.0
+  Shader support (compile-only dependency).
+- ViaFabricPlus (https://github.com/ViaVersion/ViaFabricPlus) - GPL-3.0
+  Protocol translation (compile-only dependency).
+- ModMenu (https://github.com/TerraformersMC/ModMenu) - MIT
+  Mod menu integration (compile-only dependency).
+
+This project is licensed under the Apache License, Version 2.0.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

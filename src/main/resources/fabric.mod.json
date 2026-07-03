@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "name": "AN0N Client",
+  "id": "anon-client",
+  "version": "${version}",
+  "description": "A Minecraft utility mod for anarchy servers. [Development Build - Expect Bugs]",
+  "authors": [
+    "AtlasDevMC",
+    "Palmtreedev-real"
+  ],
+  "contact": {
+    "homepage": "https://github.com/PalmtreeDev-real/an0n-client",
+    "issues": "https://github.com/PalmtreeDev-real/an0n-client/issues",
+    "sources": "https://github.com/PalmtreeDev-real/an0n-client",
+    "discord": "https://discord.gg/nVUBzkZEM5"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/anon-client/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.anon.client.AnonClient"
+    ],
+    "modmenu": [
+      "dev.anon.client.modintegration.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "anon-client.mixins.json",
+    "anon-client-baritone.mixins.json",
+    "anon-client-indigo.mixins.json",
+    "anon-client-sodium.mixins.json",
+    "anon-client-lithium.mixins.json",
+    "anon-client-viafabricplus.mixins.json"
+  ],
+  "accessWidener": "anon-client.classtweaker",
+  "custom": {
+    "anon-client:build_number": "${build_number}",
+    "anon-client:color": "30,30,30",
+    "anon-client:commit": "${commit}",
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.gg/nVUBzkZEM5"
+      }
+    },
+    "badoptimizations:cache_hooks": {
+      "lightmap": "dev.anon.client.modintegration.BadOptimizationsHook"
+    }
+  },
+  "depends": {
+    "java": ">=${jdk_version}",
+    "minecraft": "${minecraft_version}",
+    "fabricloader": ">=${loader_version}"
+  },
+  "breaks": {
+    "optifabric": "*",
+    "feather": "*",
+    "origins": "*",
+    "sodium": "<0.8.7",
+    "morechathistory": "*",
+    "lithium": "<0.22.1"
+  }
+}

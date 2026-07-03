@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "package": "dev.anon.client.mixin.indigo",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "dev.anon.client.MixinPlugin",
+  "client": [
+    "AltModelBlockRendererImplMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
