@@ -1,5 +1,5 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
   - name: Discord
-    url: https://discord.gg/AN0N
+    url: https://discord.gg/fsyFenWkm
     about: Join our discord for faster support on smaller issues.
