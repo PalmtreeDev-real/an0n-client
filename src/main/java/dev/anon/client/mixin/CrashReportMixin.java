@@ -1,0 +1,86 @@
+/*
+ * This file is part of the AN0N Client distribution (https://github.com/Palmtreedev-real/AN0N).
+ * Copyright (c) 2026 AtlasDevMC.
+ */
+
+package dev.anon.client.mixin;
+
+import dev.anon.client.AnonClient;
+import dev.anon.client.systems.hud.Hud;
+import dev.anon.client.systems.hud.HudElement;
+import dev.anon.client.systems.hud.elements.TextHud;
+import dev.anon.client.systems.modules.Category;
+import dev.anon.client.systems.modules.Module;
+import dev.anon.client.systems.modules.Modules;
+import net.minecraft.CrashReport;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.List;
+
+@Mixin(CrashReport.class)
+public abstract class CrashReportMixin {
+    @Inject(method = "getDetails(Ljava/lang/StringBuilder;)V", at = @At("TAIL"))
+    private void onAddDetails(StringBuilder builder, CallbackInfo ci) {
+        builder.append("\n\n-- AN0N Client --\n\n");
+        builder.append("Version: ").append(AnonClient.VERSION).append("\n");
+        if (!AnonClient.BUILD_NUMBER.isEmpty()) {
+            builder.append("Build: ").append(AnonClient.BUILD_NUMBER).append("\n");
+        }
+
+        if (Modules.get() != null) {
+            boolean modulesActive = false;
+            for (Category category : Modules.loopCategories()) {
+                List<Module> modules = Modules.get().getGroup(category);
+                boolean categoryActive = false;
+
+                for (Module module : modules) {
+                    if (module == null || !module.isActive()) continue;
+
+                    if (!modulesActive) {
+                        modulesActive = true;
+                        builder.append("\n[[ Active Modules ]]\n");
+                    }
+
+                    if (!categoryActive) {
+                        categoryActive = true;
+                        builder.append("\n[")
+                            .append(category)
+                            .append("]:\n");
+                    }
+
+                    builder.append(module.name).append("\n");
+                }
+
+            }
+
+        }
+
+        if (Hud.get() != null && Hud.get().active) {
+            boolean hudActive = false;
+            for (HudElement element : Hud.get()) {
+                if (element == null || !element.isActive()) continue;
+
+                if (!hudActive) {
+                    hudActive = true;
+                    builder.append("\n[[ Active Hud Elements ]]\n");
+                }
+
+                if (!(element instanceof TextHud textHud)) builder.append(element.info.name).append("\n");
+                else {
+                    builder.append("Text\n{")
+                        .append(textHud.text.get())
+                        .append("}\n");
+                    if (textHud.shown.get() != TextHud.Shown.Always) {
+                        builder.append("(")
+                            .append(textHud.shown.get())
+                            .append(textHud.condition.get())
+                            .append(")\n");
+                    }
+                }
+            }
+        }
+    }
+}

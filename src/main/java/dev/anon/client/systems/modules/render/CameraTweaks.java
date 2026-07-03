@@ -1,0 +1,97 @@
+/*
+ * This file is part of the AN0N Client distribution (https://github.com/Palmtreedev-real/AN0N).
+ * Copyright (c) 2026 AtlasDevMC.
+ */
+
+package dev.anon.client.systems.modules.render;
+
+import dev.anon.client.events.game.ChangePerspectiveEvent;
+import dev.anon.client.events.anon.MouseScrollEvent;
+import dev.anon.client.settings.*;
+import dev.anon.client.systems.modules.Categories;
+import dev.anon.client.systems.modules.Module;
+import dev.anon.client.utils.misc.Keybind;
+import meteordevelopment.orbit.EventHandler;
+import net.minecraft.client.CameraType;
+import org.lwjgl.glfw.GLFW;
+
+public class CameraTweaks extends Module {
+    private final SettingGroup sgGeneral = settings.getDefaultGroup();
+    private final SettingGroup sgScrolling = settings.createGroup("Scrolling");
+
+    // General
+
+    private final Setting<Boolean> clip = sgGeneral.add(new BoolSetting.Builder()
+        .name("clip")
+        .description("Allows the camera to clip through blocks.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Double> cameraDistance = sgGeneral.add(new DoubleSetting.Builder()
+        .name("camera-distance")
+        .description("The distance the third person camera is from the player.")
+        .defaultValue(4)
+        .min(0)
+        .onChanged(value -> distance = value)
+        .build()
+    );
+
+    // Scrolling
+
+    private final Setting<Boolean> scrollingEnabled = sgScrolling.add(new BoolSetting.Builder()
+        .name("scrolling")
+        .description("Allows you to scroll to change camera distance.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Keybind> scrollKeybind = sgScrolling.add(new KeybindSetting.Builder()
+        .name("bind")
+        .description("Binds camera distance scrolling to a key.")
+        .visible(scrollingEnabled::get)
+        .defaultValue(Keybind.fromKey(GLFW.GLFW_KEY_LEFT_ALT))
+        .build()
+    );
+
+    private final Setting<Double> scrollSensitivity = sgScrolling.add(new DoubleSetting.Builder()
+        .name("sensitivity")
+        .description("Sensitivity of the scroll wheel when changing the cameras distance.")
+        .visible(scrollingEnabled::get)
+        .defaultValue(1)
+        .min(0.01)
+        .build()
+    );
+
+    public double distance;
+
+    public CameraTweaks() {
+        super(Categories.Render, "camera-tweaks", "Allows modification of the third person camera.");
+    }
+
+    @Override
+    public void onActivate() {
+        distance = cameraDistance.get();
+    }
+
+    @EventHandler
+    private void onPerspectiveChanged(ChangePerspectiveEvent event) {
+        distance = cameraDistance.get();
+    }
+
+    @EventHandler
+    private void onMouseScroll(MouseScrollEvent event) {
+        if (mc.options.getCameraType() == CameraType.FIRST_PERSON || mc.screen != null || !scrollingEnabled.get() || (scrollKeybind.get().isSet() && !scrollKeybind.get().isPressed()))
+            return;
+
+        if (scrollSensitivity.get() > 0) {
+            distance -= event.value * 0.25 * (scrollSensitivity.get() * distance);
+
+            event.cancel();
+        }
+    }
+
+    public boolean clip() {
+        return isActive() && clip.get();
+    }
+}
