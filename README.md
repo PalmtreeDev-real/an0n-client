@@ -32,6 +32,12 @@ AN0N is actively maintained, built on a modern codebase (Meteor), and doesn't lo
 ### vs Paid Clients (Prestige, etc.)
 **AN0N is 100% free.** No payments, no subscriptions, no Patreon-exclusive features. Everything we build is available to everyone. We believe utility mods should be accessible, not monetized. You get the same features as paid clients — often more — without spending a dime.
 
+## Flagship Features
+
+- **AnonPvp** — Combat automation bot with skillset presets, more human-like than KillAura.
+- **AnonStealth** — Hidden HUD and client files, activated only by pressing Ctrl five times.
+- **AnonT1me** — Version spoofing to connect across different Minecraft versions.
+
 ---
 
 ## ⚠️ Disclaimer: Read the Code
@@ -54,7 +60,13 @@ We take security and transparency seriously. If you find a genuine security issu
 - The built JAR will be in `build/libs/`
 
 ### Installation
-Follow the guide on the website.
+1. Install [Fabric Loader](https://fabricmc.net/) for **Minecraft 26.1.2**.
+2. Download the [latest AN0N release JAR](https://github.com/PalmtreeDev-real/an0n-client/releases).
+3. Download the [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api) for **Minecraft 26.1.2**.
+4. Place both the AN0N JAR and Fabric API JAR in your `.minecraft/mods` folder.
+5. Launch Minecraft with the **Fabric** profile.
+
+> **Note:** You **must** have Minecraft 26.1.2 and Fabric API installed. AN0N will not work on other versions or without Fabric API.
 
 ## Contributions
 We will review and help with all reasonable pull requests as long as the guidelines below are met.
