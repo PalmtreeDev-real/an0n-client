@@ -26,9 +26,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class AxochatClient {
-    private static final URI CHAT_URI = URI.create("wss://chat.liquidbounce.net:7886/ws");
+    private static final URI DEFAULT_URI = URI.create("wss://chat.liquidbounce.net:7886/ws");
     private static final int MAX_FRAME_SIZE = 65536;
 
+    private final URI chatUri;
+    private final String sourceId;
     private final Minecraft mc = Minecraft.getInstance();
     private Channel channel;
     private io.netty.channel.EventLoopGroup eventLoopGroup;
@@ -43,6 +45,16 @@ public class AxochatClient {
     private final Gson deserializerGson;
 
     public AxochatClient() {
+        this(DEFAULT_URI, "main");
+    }
+
+    public AxochatClient(URI uri) {
+        this(uri, "main");
+    }
+
+    public AxochatClient(URI uri, String sourceId) {
+        this.chatUri = uri;
+        this.sourceId = sourceId;
         serializer.registerPacket("RequestMojangInfo", RequestMojangInfoPacket.class);
         serializer.registerPacket("LoginMojang", LoginMojangPacket.class);
         serializer.registerPacket("Message", ServerMessagePacket.class);
@@ -51,6 +63,8 @@ public class AxochatClient {
         serializer.registerPacket("UnbanUser", UnbanUserPacket.class);
         serializer.registerPacket("RequestJWT", RequestJWTPacket.class);
         serializer.registerPacket("LoginJWT", LoginJWTPacket.class);
+        serializer.registerPacket("Register", RegisterPacket.class);
+        serializer.registerPacket("LoginPassword", LoginPasswordPacket.class);
 
         deserializer.registerPacket("MojangInfo", MojangInfoPacket.class);
         deserializer.registerPacket("NewJWT", NewJWTPacket.class);
@@ -88,11 +102,11 @@ public class AxochatClient {
             return future;
         }
 
-        AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.CONNECTING));
+        AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.CONNECTING));
         isConnecting = true;
         isLoggedIn = false;
 
-        boolean ssl = CHAT_URI.getScheme().equalsIgnoreCase("wss");
+        boolean ssl = chatUri.getScheme().equalsIgnoreCase("wss");
 
         try {
             SslContext sslContext = null;
@@ -103,7 +117,7 @@ public class AxochatClient {
             }
 
             WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(
-                CHAT_URI, WebSocketVersion.V13, null, true, new DefaultHttpHeaders(), MAX_FRAME_SIZE
+                chatUri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders(), MAX_FRAME_SIZE
             );
 
             SslContext finalSslContext = sslContext;
@@ -125,12 +139,12 @@ public class AxochatClient {
                     }
                 });
 
-            bootstrap.connect(CHAT_URI.getHost(), CHAT_URI.getPort()).addListener((ChannelFutureListener) cf -> {
+            bootstrap.connect(chatUri.getHost(), chatUri.getPort()).addListener((ChannelFutureListener) cf -> {
                 if (cf.isSuccess()) {
                     channel = cf.channel();
                 } else {
                     isConnecting = false;
-                    AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(
+                    AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(sourceId, 
                         cf.cause().getLocalizedMessage() != null ?
                             cf.cause().getLocalizedMessage() :
                             cf.cause().getMessage() != null ?
@@ -142,7 +156,7 @@ public class AxochatClient {
             });
         } catch (Exception e) {
             isConnecting = false;
-            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(
+            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(sourceId, 
                 e.getLocalizedMessage() != null ? e.getLocalizedMessage() : e.getMessage()
             ));
             future.completeExceptionally(e);
@@ -161,7 +175,7 @@ public class AxochatClient {
             eventLoopGroup.shutdownGracefully();
             eventLoopGroup = null;
         }
-        AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.DISCONNECTED));
+        AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.DISCONNECTED));
         isConnecting = false;
         isLoggedIn = false;
     }
@@ -175,7 +189,7 @@ public class AxochatClient {
     }
 
     private void loginOffline() {
-        AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.LOGGING_IN));
+        AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.LOGGING_IN));
         sendPacket(new LoginMojangPacket(
             mc.getUser().getName(),
             mc.getUser().getProfileId(),
@@ -186,7 +200,7 @@ public class AxochatClient {
     public void sendMessage(String message) {
         long now = System.currentTimeMillis();
         if (now - lastMessageTime < 1500) {
-            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent("Please wait before sending another message."));
+            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(sourceId, "Please wait before sending another message."));
             return;
         }
         lastMessageTime = now;
@@ -206,8 +220,17 @@ public class AxochatClient {
     }
 
     public void loginViaJwt(String token) {
-        AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.LOGGING_IN));
+        AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.LOGGING_IN));
         sendPacket(new LoginJWTPacket(token, true));
+    }
+
+    public void registerPassword(String password) {
+        sendPacket(new RegisterPacket(password));
+    }
+
+    public void loginViaPassword(String password) {
+        isLoggedIn = false;
+        sendPacket(new LoginPasswordPacket(password));
     }
 
     public void sendRawPacket(AxochatPacket.C2S packet) {
@@ -250,7 +273,7 @@ public class AxochatClient {
             var accessToken = mc.getUser().getAccessToken();
             var sessionHash = mojangInfo.getSessionHash();
 
-            AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.LOGGING_IN));
+            AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.LOGGING_IN));
 
             try {
                 services.sessionService().joinServer(profileId, accessToken, sessionHash);
@@ -261,10 +284,10 @@ public class AxochatClient {
                 ));
             } catch (AuthenticationException e) {
                 AnonClient.LOG.error("[AN0N Chat] AuthenticationException: {}", e.getMessage());
-                AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.AUTHENTICATION_FAILED));
+                AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.AUTHENTICATION_FAILED));
             } catch (Exception e) {
                 AnonClient.LOG.error("[AN0N Chat] joinServer error", e);
-                AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(
+                AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(sourceId, 
                     e.getLocalizedMessage() != null ? e.getLocalizedMessage() :
                         e.getMessage() != null ? e.getMessage() :
                             e.getClass().getName()
@@ -275,7 +298,7 @@ public class AxochatClient {
 
         if (packet instanceof ClientMessagePacket msg) {
             AnonClient.EVENT_BUS.post(new ClientChatMessageEvent(
-                msg.getUser(), msg.getContent(),
+                sourceId, msg.getUser(), msg.getContent(),
                 ClientChatMessageEvent.ChatGroup.PUBLIC_CHAT
             ));
             return;
@@ -283,21 +306,21 @@ public class AxochatClient {
 
         if (packet instanceof ClientPrivateMessagePacket pm) {
             AnonClient.EVENT_BUS.post(new ClientChatMessageEvent(
-                pm.getUser(), pm.getContent(),
+                sourceId, pm.getUser(), pm.getContent(),
                 ClientChatMessageEvent.ChatGroup.PRIVATE_CHAT
             ));
             return;
         }
 
         if (packet instanceof ErrorPacket error) {
-            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(translateErrorMessage(error)));
+            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(sourceId, translateErrorMessage(error)));
             return;
         }
 
         if (packet instanceof SuccessPacket success) {
             switch (success.getReason()) {
                 case "Login" -> {
-                    AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.LOGGED_IN));
+                    AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.LOGGED_IN));
                     isLoggedIn = true;
                 }
                 case "Ban" -> AnonClient.LOG.info("[AN0N Chat] Successfully banned user!");
@@ -354,7 +377,7 @@ public class AxochatClient {
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) {
-            AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.DISCONNECTED));
+            AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.DISCONNECTED));
             isConnecting = false;
             isLoggedIn = false;
             if (eventLoopGroup != null) {
@@ -366,7 +389,7 @@ public class AxochatClient {
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
             AnonClient.LOG.error("AN0N Chat error", cause);
-            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(
+            AnonClient.EVENT_BUS.post(new ClientChatErrorEvent(sourceId, 
                 cause.getLocalizedMessage() != null ? cause.getLocalizedMessage() :
                     cause.getMessage() != null ? cause.getMessage() :
                         cause.getClass().getName()
@@ -389,7 +412,7 @@ public class AxochatClient {
                     isConnecting = false;
 
                     if (isConnected()) {
-                        AnonClient.EVENT_BUS.post(new ClientChatStateChange(ClientChatStateChange.State.CONNECTED));
+                        AnonClient.EVENT_BUS.post(new ClientChatStateChange(sourceId, ClientChatStateChange.State.CONNECTED));
                     }
                     connectFuture.complete(null);
                 } catch (WebSocketHandshakeException e) {

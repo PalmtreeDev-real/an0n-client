@@ -72,6 +72,9 @@ public class Commands {
         add(new HelpCommand());
         add(new ChatCommand());
         add(new ChatJwtCommand());
+        add(new AiCommand());
+        add(new AiConnectCommand());
+        add(new LegacyChatCommand());
 
         COMMANDS.sort(Comparator.comparing(Command::getName));
 

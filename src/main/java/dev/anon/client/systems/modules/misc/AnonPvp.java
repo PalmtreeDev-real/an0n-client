@@ -30,38 +30,30 @@ import net.minecraft.world.item.MaceItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.BlockPos;
 
-import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
 
 public class AnonPvp extends Module {
+    private static final Random RANDOM = new Random();
+
     public enum Skillset {
-        None,
-        LT5,
-        LT4,
-        LT3,
-        LT2,
-        LT1,
-        HT1
+        None, LT5, LT4, LT3, LT2, LT1, HT1
     }
 
     public enum PvpMode {
-        AutoPVP,
-        AutoCrystal,
-        PVPBot,
-        AutoMace,
-        AutoCart
+        AutoPVP, AutoCrystal, PVPBot, AutoMace, AutoCart
     }
 
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgTargeting = settings.createGroup("Targeting");
     private final SettingGroup sgTiming = settings.createGroup("Timing");
+    private final SettingGroup sgHumanization = settings.createGroup("Humanization");
 
     private final Setting<Skillset> skillset = sgGeneral.add(new EnumSetting.Builder<Skillset>()
         .name("skillset")
-        .description("PvP skillset tier to apply across all modules.")
+        .description("PvP skillset tier.")
         .defaultValue(Skillset.None)
-        .onChanged(this::applySkillset)
         .build()
     );
 
@@ -102,45 +94,87 @@ public class AnonPvp extends Module {
         .build()
     );
 
-    private final Setting<Integer> actions = sgTiming.add(new IntSetting.Builder()
-        .name("actions-per-tick")
-        .description("Maximum actions per tick.")
-        .defaultValue(1)
+    private final Setting<Integer> minCps = sgTiming.add(new IntSetting.Builder()
+        .name("min-cps")
+        .description("Minimum clicks per second.")
+        .defaultValue(4)
         .min(1)
-        .sliderMax(6)
+        .sliderMax(20)
         .build()
     );
 
-    private final Setting<Integer> cooldown = sgTiming.add(new IntSetting.Builder()
-        .name("cooldown")
-        .description("Cooldown between actions in ticks.")
-        .defaultValue(0)
+    private final Setting<Integer> maxCps = sgTiming.add(new IntSetting.Builder()
+        .name("max-cps")
+        .description("Maximum clicks per second.")
+        .defaultValue(8)
+        .min(1)
+        .sliderMax(20)
+        .build()
+    );
+
+    private final Setting<Integer> reactionDelay = sgHumanization.add(new IntSetting.Builder()
+        .name("reaction-delay")
+        .description("Ticks before first attack after target appears.")
+        .defaultValue(3)
         .min(0)
         .sliderMax(20)
         .build()
     );
 
+    private final Setting<Integer> missChance = sgHumanization.add(new IntSetting.Builder()
+        .name("miss-chance")
+        .description("Percentage chance to miss a hit (0 = never miss).")
+        .defaultValue(5)
+        .min(0)
+        .sliderMax(50)
+        .build()
+    );
+
+    private final Setting<Boolean> randomStrafe = sgHumanization.add(new BoolSetting.Builder()
+        .name("random-strafe")
+        .description("Randomly strafe left/right while closing in.")
+        .defaultValue(true)
+        .build()
+    );
+
     private Entity target;
-    private int timer;
+    private int nextActionTick;
+    private int reactionTicks;
+    private int strafeTicks;
+    private boolean strafeDir;
+    private float aimOffsetYaw;
+    private float aimOffsetPitch;
+    private int aimChangeTicks;
 
     public AnonPvp() {
-        super(Categories.Misc, "an0n-pvp", "All-in-one PVP module with multiple modes and skillset presets.");
+        super(Categories.Misc, "an0n-pvp", "All-in-one PVP module with humanized combat.");
     }
 
     @Override
     public void onActivate() {
         target = null;
-        timer = 0;
+        nextActionTick = 0;
+        reactionTicks = 0;
+        strafeTicks = 0;
+        aimOffsetYaw = 0;
+        aimOffsetPitch = 0;
+        aimChangeTicks = 0;
         if (skillset.get() != Skillset.None) applySkillset(skillset.get());
     }
 
     @Override
     public void onDeactivate() {
-        if (mode.get() == PvpMode.PVPBot) {
-            mc.options.keyUp.setDown(false);
-            mc.options.keyJump.setDown(false);
-        }
+        releaseMovementKeys();
         target = null;
+        if (skillset.get() != Skillset.None) undoSkillset();
+    }
+
+    private void releaseMovementKeys() {
+        mc.options.keyUp.setDown(false);
+        mc.options.keyDown.setDown(false);
+        mc.options.keyLeft.setDown(false);
+        mc.options.keyRight.setDown(false);
+        mc.options.keyJump.setDown(false);
     }
 
     private Predicate<Entity> entityPredicate() {
@@ -476,37 +510,93 @@ public class AnonPvp extends Module {
         }
     }
 
+    private void undoSkillset() {
+        toggleModule(Modules.get().get(KillAura.class), false);
+        toggleModule(Modules.get().get(Criticals.class), false);
+        toggleModule(Modules.get().get(AutoTotem.class), false);
+        toggleModule(Modules.get().get(AutoArmor.class), false);
+        toggleModule(Modules.get().get(Surround.class), false);
+        toggleModule(Modules.get().get(AutoWeapon.class), false);
+        toggleModule(Modules.get().get(Hitboxes.class), false);
+        toggleModule(Modules.get().get(BowAimbot.class), false);
+        toggleModule(Modules.get().get(AutoEXP.class), false);
+        toggleModule(Modules.get().get(Offhand.class), false);
+        toggleModule(Modules.get().get(Velocity.class), false);
+        toggleModule(Modules.get().get(NoSlow.class), false);
+        toggleModule(Modules.get().get(Timer.class), false);
+        toggleModule(Modules.get().get(Reach.class), false);
+        toggleModule(Modules.get().get(AntiHunger.class), false);
+        toggleModule(Modules.get().get(SpeedMine.class), false);
+        toggleModule(Modules.get().get(NoMiningTrace.class), false);
+        toggleModule(Modules.get().get(AutoGap.class), false);
+        toggleModule(Modules.get().get(AutoClicker.class), false);
+        toggleModule(Modules.get().get(FastUse.class), false);
+        toggleModule(Modules.get().get(AutoTool.class), false);
+        toggleModule(Modules.get().get(AutoEat.class), false);
+        toggleModule(Modules.get().get(PacketMine.class), false);
+    }
+
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (timer > 0) { timer--; return; }
+        if (mc.player == null || mc.level == null) return;
+        if (!isActive()) return;
 
         target = TargetUtils.get(entityPredicate(), priority.get());
-        if (target == null) return;
+        if (target == null) {
+            if (mode.get() == PvpMode.PVPBot) releaseMovementKeys();
+            nextActionTick = 0;
+            reactionTicks = 0;
+            return;
+        }
 
-        if (PlayerUtils.distanceTo(target) > range.get()) return;
+        double dist = PlayerUtils.distanceTo(target);
+        if (dist > range.get() + 1.0) {
+            if (mode.get() == PvpMode.PVPBot) releaseMovementKeys();
+            return;
+        }
+
+        if (nextActionTick > 0) {
+            nextActionTick--;
+            if (mode.get() == PvpMode.PVPBot) doPvpBotMovement(dist);
+            return;
+        }
+
+        int min = Math.max(1, minCps.get());
+        int max = Math.max(min, maxCps.get());
+        int delay = Math.max(1, 20 / (min + RANDOM.nextInt(max - min + 1)));
+        nextActionTick = delay + (RANDOM.nextInt(3) - 1);
+        if (nextActionTick < 1) nextActionTick = 1;
 
         switch (mode.get()) {
-            case AutoPVP -> doAutoPvp();
+            case AutoPVP -> doAutoPvp(dist);
             case AutoCrystal -> doAutoCrystal();
-            case PVPBot -> doPvpBot();
+            case PVPBot -> doPvpBot(dist);
             case AutoMace -> doAutoMace();
             case AutoCart -> doAutoCart();
         }
-
-        timer = cooldown.get();
     }
 
-    private void doAutoPvp() {
+    private boolean shouldMiss() {
+        return missChance.get() > 0 && RANDOM.nextInt(100) < missChance.get();
+    }
+
+    private void doAutoPvp(double distance) {
         if (!(target instanceof LivingEntity living)) return;
         if (living instanceof ArmorStand) return;
 
+        if (distance > range.get()) return;
+
+        updateAim();
+
         if (rotate.get()) {
-            Rotations.rotate(Rotations.getYaw(living), Rotations.getPitch(living));
+            double yaw = Rotations.getYaw(living);
+            double pitch = Rotations.getPitch(living);
+            Rotations.rotate(yaw + aimOffsetYaw, pitch + aimOffsetPitch);
         }
 
-        for (int i = 0; i < actions.get(); i++) {
-            mc.gameMode.attack(mc.player, living);
-        }
+        if (shouldMiss()) return;
+
+        mc.gameMode.attack(mc.player, living);
         mc.player.swing(InteractionHand.MAIN_HAND);
     }
 
@@ -528,38 +618,74 @@ public class AnonPvp extends Module {
         BlockUtils.place(targetPos, crystal, true, 0, true);
     }
 
-    private void doPvpBot() {
+    private void doPvpBot(double distance) {
         if (!(target instanceof Player)) return;
 
-        mc.player.setSprinting(true);
+        if (reactionTicks < reactionDelay.get()) {
+            releaseMovementKeys();
+            reactionTicks++;
+            return;
+        }
 
-        double dx = target.getX() - mc.player.getX();
-        double dz = target.getZ() - mc.player.getZ();
-        double distance = Math.sqrt(dx * dx + dz * dz);
+        doPvpBotMovement(distance);
+        updateAim();
 
-        if (distance > 1.5 && distance < range.get()) {
+        if (rotate.get()) {
+            double yaw = Rotations.getYaw(target);
+            double pitch = Rotations.getPitch(target);
+            Rotations.rotate(yaw + aimOffsetYaw, pitch + aimOffsetPitch);
+        }
+
+        if (distance < range.get() && mc.player.getAttackStrengthScale(0.5f) >= 0.85f) {
+            if (shouldMiss()) return;
+
+            mc.gameMode.attack(mc.player, target);
+            mc.player.swing(InteractionHand.MAIN_HAND);
+        }
+    }
+
+    private void doPvpBotMovement(double distance) {
+        if (mc.player.getVehicle() != null) {
+            double dx = target.getX() - mc.player.getX();
+            double dz = target.getZ() - mc.player.getZ();
+            mc.player.getVehicle().setYRot((float) Math.toDegrees(Math.atan2(-dx, dz)));
+            return;
+        }
+
+        if (distance > 1.8) {
             mc.options.keyUp.setDown(true);
+            mc.options.keyDown.setDown(false);
 
-            if (mc.player.tickCount % 20 < 10 && distance < 4) {
+            if (randomStrafe.get()) {
+                strafeTicks--;
+                if (strafeTicks <= 0) {
+                    strafeDir = RANDOM.nextBoolean();
+                    strafeTicks = 5 + RANDOM.nextInt(15);
+                }
+                mc.options.keyLeft.setDown(strafeDir);
+                mc.options.keyRight.setDown(!strafeDir);
+            }
+
+            if (distance > 2.5 && RANDOM.nextInt(100) < 15) {
                 mc.options.keyJump.setDown(true);
             } else {
                 mc.options.keyJump.setDown(false);
             }
+
+            if (RANDOM.nextInt(100) < 5) {
+                mc.options.keyUp.setDown(false);
+            }
         } else {
             mc.options.keyUp.setDown(false);
-        }
+            mc.options.keyDown.setDown(false);
+            mc.options.keyLeft.setDown(false);
+            mc.options.keyRight.setDown(false);
 
-        if (mc.player.getVehicle() != null) {
-            mc.player.getVehicle().setYRot((float) Math.toDegrees(Math.atan2(-dx, dz)));
-        }
-
-        if (rotate.get()) {
-            Rotations.rotate(Rotations.getYaw(target), Rotations.getPitch(target));
-        }
-
-        if (distance < range.get() && mc.player.getAttackStrengthScale(0.5f) >= 0.9f) {
-            mc.gameMode.attack(mc.player, target);
-            mc.player.swing(InteractionHand.MAIN_HAND);
+            if (RANDOM.nextInt(100) < 3) {
+                mc.options.keyJump.setDown(true);
+            } else {
+                mc.options.keyJump.setDown(false);
+            }
         }
     }
 
@@ -599,6 +725,15 @@ public class AnonPvp extends Module {
 
         if (mc.level.getBlockState(placePos).isAir()) {
             BlockUtils.place(placePos, tntCart, true, 0, true);
+        }
+    }
+
+    private void updateAim() {
+        aimChangeTicks--;
+        if (aimChangeTicks <= 0) {
+            aimOffsetYaw = (RANDOM.nextFloat() - 0.5f) * 4.0f;
+            aimOffsetPitch = (RANDOM.nextFloat() - 0.5f) * 2.0f;
+            aimChangeTicks = 5 + RANDOM.nextInt(10);
         }
     }
 }

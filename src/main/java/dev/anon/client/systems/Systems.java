@@ -16,6 +16,7 @@ import dev.anon.client.systems.macros.Macros;
 import dev.anon.client.systems.modules.Modules;
 import dev.anon.client.systems.profiles.Profiles;
 import dev.anon.client.systems.proxies.Proxies;
+import dev.anon.client.systems.ai.An0nAI;
 import dev.anon.client.systems.waypoints.Waypoints;
 import meteordevelopment.orbit.EventHandler;
 
@@ -51,6 +52,7 @@ public class Systems {
         add(new Waypoints());
         add(new Profiles());
         add(new Proxies());
+        add(new An0nAI());
         add(new Hud());
 
         AnonClient.EVENT_BUS.subscribe(Systems.class);

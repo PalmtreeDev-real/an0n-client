@@ -23,6 +23,7 @@ import dev.anon.client.systems.config.Config;
 import dev.anon.client.systems.modules.combat.*;
 import dev.anon.client.systems.modules.misc.*;
 import dev.anon.client.systems.modules.misc.swarm.Swarm;
+import dev.anon.client.systems.modules.misc.ProtonVpn;
 import dev.anon.client.systems.modules.movement.*;
 import dev.anon.client.systems.modules.movement.elytrafly.ElytraFly;
 import dev.anon.client.systems.modules.movement.speed.Speed;
@@ -581,6 +582,7 @@ public class Modules extends System<Modules> {
         add(new Notifier());
         add(new PacketCanceller());
         add(new PacketLogger());
+        add(new ProtonVpn());
         add(new ServerSpoof());
         add(new SoundBlocker());
         add(new Spam());

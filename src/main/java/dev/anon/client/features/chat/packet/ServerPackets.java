@@ -97,4 +97,26 @@ public class ServerPackets {
     public static class RequestJWTPacket implements AxochatPacket.C2S {
         public RequestJWTPacket() {}
     }
+
+    public static class RegisterPacket implements AxochatPacket.C2S {
+        @SerializedName("password")
+        private final String password;
+
+        public RegisterPacket(String password) {
+            this.password = password;
+        }
+
+        public String getPassword() { return password; }
+    }
+
+    public static class LoginPasswordPacket implements AxochatPacket.C2S {
+        @SerializedName("password")
+        private final String password;
+
+        public LoginPasswordPacket(String password) {
+            this.password = password;
+        }
+
+        public String getPassword() { return password; }
+    }
 }
