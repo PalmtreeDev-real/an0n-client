@@ -40,6 +40,39 @@ AN0N is actively maintained, built on a modern codebase (Meteor), and doesn't lo
 
 ---
 
+## Error Codes
+
+AN0N SocialChat and An0nAI display error codes to quickly identify issues.
+
+### 🚫 Ban & Punishment
+| Code | Name | Meaning |
+|------|------|---------|
+| 624 | Device Ban | 🛡️ Your hardware is permanently exiled from An0n SocialChat. |
+| 977 | Permanent Ban | ⚰️ You are persona non grata. No appeal. No mercy. |
+| 992 | Suspended from Chat | ⏳ You're on timeout. The AI is watching you. |
+
+### ⚙️ Client & System Errors
+| Code | Name | Meaning |
+|------|------|---------|
+| 726 | Outdated Client | 🔄 Update your client or get left behind. |
+| 872 | Client Issue | 🔧 Something's broken on your end. Reinstall. |
+| 192 | AI Not Found | 🧠 The brain is missing. Did Ollama fail? |
+
+### 🌐 Network & Server Errors
+| Code | Name | Meaning |
+|------|------|---------|
+| 762 | Server Overloaded | 🌍 Too many An0n users. The network is popping off. |
+
+### ✨ Future / Meme Codes
+| Code | Name | Meaning |
+|------|------|---------|
+| 420 | Roasted by AI | 💥 You got called out publicly in SocialChat. |
+| 666 | AI Corruption | 👿 The AI has gone rogue. Good luck. |
+| 001 | Admin Override | 👀 You did something. Or the AI did. Who knows. |
+| 404 | Feature Not Found | 🔍 You tried to enable something that doesn't exist yet. |
+
+---
+
 ## ⚠️ Disclaimer: Read the Code
 
 AN0N Client is **fully open source**. Every line of code is visible in this repository. Before making accusations about malware, RATs, or malicious code:
